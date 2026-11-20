@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>King's Luxury</title>
+    <style> 
+    /* BASE STYLES */
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    body { background: #fff; color: #000; padding-bottom: 20px; overflow-x: hidden;}
+    a { text-decoration: none; color: inherit; }
+
+    /* --- WELCOME SPLASH SCREEN --- */
+    #welcomeScreen {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+        background: #000; color: #fff; z-index: 9999;
+        display: flex; flex-direction: column; justify-content: center; align-items: center;
+        text-align: center; transition: opacity 1s ease-out;
+    }
+    #welcomeScreen h1 { font-family: 'Times New Roman', Times, serif; font-size: 32px; letter-spacing: 3px; margin-bottom: 15px; font-weight: normal;}
+    #welcomeScreen p { font-size: 14px; letter-spacing: 2px; color: #fff; text-transform: uppercase; font-weight: 300;}
+    .loader { margin-top: 40px; width: 30px; height: 30px; border: 2px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HEADER */
+    .header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #eee; position: sticky; top: 0; background: #fff; z-index: 100; }
+    .logo { font-family: 'Times New Roman', Times, serif; font-size: 20px; letter-spacing: 2px; font-weight: bold; }
+    .nav-icons { display: flex; gap: 20px; font-size: 18px; cursor: pointer; align-items: center; }
+    
+    /* CUSTOM CART BADGE */
+    .cart-wrapper { position: relative; cursor: pointer; }
+    .cart-badge { 
+        position: absolute; top: -8px; right: -10px; 
+        background: #000; color: #fff; 
+        border-radius: 50%; padding: 3px 7px; 
+        font-size: 10px; font-weight: bold; 
+        display: none; border: 2px solid #fff;
+        transition: transform 0.2s;
+    }
+    .cart-badge.pop { transform: scale(1.4); }
+
+    /* TITLE & FILTER */
+    .title-section { padding: 30px 20px 10px; }
+    .title-section h1 { font-size: 24px; font-weight: normal; letter-spacing: 1px; }
+    .filter-bar { display: flex; justify-content: space-between; padding: 10px 20px; font-size: 12px; border-bottom: 1px solid #eee; color: #555; cursor: pointer; }
+
+    /* PRODUCT GRID */
+    .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; }
+    .product-card { cursor: pointer; text-align: center; }
+    .product-card img { width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover; background: #f5f5f5; margin-bottom: 10px; mix-blend-mode: multiply;}
+    .product-card h3 { font-size: 12px; font-weight: normal; margin-bottom: 5px; }
+    
+    /* DISCOUNT PRICES ON GRID */
+    .old-price { font-size: 11px; color: #999; text-decoration: line-through; margin-right: 5px;}
+    .new-price { font-size: 12px; font-weight: bold; color: #000; }
+
+    /* MENUS & OVERLAYS */
+    .side-menu { position: fixed; top: 0; left: -100%; width: 280px; height: 100vh; background: #fff; z-index: 1000; transition: 0.3s; padding: 20px; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+    .side-menu.open { left: 0; }
+    .menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .menu-header button { background: none; border: none; font-size: 20px; cursor: pointer; }
+    .side-menu ul { list-style: none; }
+    .side-menu ul li { margin-bottom: 20px; }
+    .side-menu ul li a { font-size: 14px; text-transform: uppercase; letter-spacing: 1px;}
+
+    .search-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(255,255,255,0.98); z-index: 1000; display: none; padding: 20px; }
+    .search-overlay.open { display: block; }
+    .search-box { display: flex; gap: 10px; border-bottom: 1px solid #000; padding-bottom: 10px; margin-top: 50px; }
+    .search-box input { width: 100%; border: none; background: transparent; font-size: 18px; outline: none; }
+    .search-box button { background: none; border: none; font-size: 20px; cursor: pointer; }
+
+    /* FORMS & DASHBOARD */
+    .form-container { max-width: 400px; margin: 50px auto; padding: 20px; text-align: center; }
+    .form-container h2 { font-size: 22px; margin-bottom: 20px; font-weight: normal; }
+    .form-input { width: 100%; padding: 15px; margin-bottom: 15px; border: 1px solid #ccc; font-size: 14px; outline: none; }
+    .form-btn { width: 100%; padding: 15px; background: #000; color: #fff; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+    
+    .dashboard-container { display: none; padding: 40px 20px; max-width: 500px; margin: 0 auto; }
+    .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+    .dashboard-header h2 { font-weight: normal; font-size: 22px; }
+    .logout-btn { background: none; border: 1px solid #000; padding: 5px 10px; font-size: 12px; cursor: pointer; }
+    .order-history-box { border: 1px solid #eee; padding: 20px; margin-top: 20px; }
+
+    /* PRODUCT MODAL */
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; }
+    .modal-content { background: #fff; width: 100%; max-width: 500px; height: 95vh; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-scroll-area { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+    .close-btn { position: absolute; top: 15px; right: 15px; font-size: 28px; cursor: pointer; z-index: 10; background: rgba(255,255,255,0.8); border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; line-height: 1;}
+    
+    .modal-image-container { position: relative; }
+    .modal-image-container img { width: 100%; height: auto; max-height: 400px; object-fit: contain; mix-blend-mode: multiply;}
+    .sale-badge { position: absolute; top: 15px; left: 15px; background: #000; color: #fff; padding: 5px 10px; font-size: 10px; font-weight: bold; letter-spacing: 1px; }
+
+    .thumbnail-container { display: flex; gap: 10px; padding: 10px 20px; }
+    .thumbnail-container img { width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 1px solid #eee;}
+    .modal-info { padding: 0 20px; }
+    .modal-info h2 { font-size: 20px; margin-bottom: 5px; font-weight: normal; }
+    .modal-price-box { margin-bottom: 15px; display: flex; align-items: center; gap: 10px;}
+    .modal-old-price { font-size: 14px; color: #999; text-decoration: line-through; }
+    .modal-new-price { font-size: 20px; font-weight: bold; color: #000; }
+    .modal-desc { font-size: 13px; line-height: 1.6; color: #555; margin-bottom: 20px; }
+
+    /* PREMIUM BUTTONS */
+    .modal-actions { padding: 15px 20px; border-top: 1px solid #eee; background: #fff; display: flex; gap: 10px;}
+    .btn-add { flex: 1; text-align: center; background: #fff; color: #000; padding: 16px 0; font-size: 12px; font-weight: bold; letter-spacing: 1px; border: 1px solid #000; cursor: pointer; text-transform: uppercase;}
+    .btn-wa { flex: 1; text-align: center; background: #000; color: #fff; padding: 16px 0; font-size: 12px; font-weight: bold; letter-spacing: 1px; border: 1px solid #000; cursor: pointer; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 8px;}
+    .btn-wa i { font-size: 16px;}
+
+    /* CART MODAL */
+    .cart-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.7); z-index: 2000; display: none; justify-content: center; align-items: center; }
+    .cart-content { background: #fff; width: 100%; max-width: 500px; height: 80vh; padding: 20px; position: relative; display: flex; flex-direction: column;}
+    .cart-items { flex: 1; overflow-y: auto; margin-top: 20px;}
+    .cart-item { display: flex; gap: 15px; border-bottom: 1px solid #eee; padding: 15px 0; align-items: center;}
+    .cart-item img { width: 60px; height: 60px; object-fit: cover; mix-blend-mode: multiply;}
+    .cart-item-info { flex: 1; }
+    .cart-item-info h4 { font-size: 14px; margin-bottom: 5px; }
+    .cart-item-info p { font-size: 12px; color: #666; }
+    .remove-item { background: none; border: none; color: red; cursor: pointer; font-size: 12px; text-decoration: underline;}
+    .checkout-btn { width: 100%; padding: 15px; background: #25D366; color: #fff; border: none; font-size: 14px; font-weight: bold; margin-top: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px;}
+
+    /* FOOTER */
+    .gucci-footer { background: #000000; color: #ffffff; padding: 40px 20px 20px; margin-top: 40px; }
+    .footer-section { margin-bottom: 30px; }
+    .footer-section h3 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 15px; font-weight: normal; }
+    .footer-text { font-size: 13px; line-height: 1.5; margin-bottom: 15px; color: #ffffff; }
+    .footer-input { display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 20px; color: #888; font-size: 14px; cursor: pointer; }
+    .footer-input i { color: #ffffff; }
+    .footer-dropdown { display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #444; padding-bottom: 15px; margin-bottom: 15px; }
+    .footer-dropdown h3 { margin-bottom: 0; color: #ffffff; }
+    .footer-dropdown i { color: #ffffff; font-size: 12px; transition: 0.3s; }
+    .footer-links { list-style: none; display: block; }
+    .footer-links.hidden { display: none; }
+    .footer-links li { margin-bottom: 15px; }
+    .footer-links a { color: #ffffff; text-decoration: underline; font-size: 13px; }
+    .footer-bottom { border-top: 1px solid #333; padding-top: 20px; font-size: 12px; color: #888; text-align: center; }
+    .footer-bottom a { color: #fff; text-decoration: underline;}
+
+    /* CHAT WIDGET */
+    .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 50; }
+    .chat-btn { background: #25D366 !important; color: white !important; border: none; width: 55px; height: 55px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; }
+    .chat-box { display: none; position: absolute; bottom: 70px; right: 0; width: 320px; background: white; border: 1px solid #000; box-shadow: 0 5px 20px rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; }
+    .chat-box.open { display: block; }
+    .chat-header { background: #000; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+    .chat-header h3 { font-size: 12px; color: white; text-transform: uppercase; letter-spacing: 1px; margin: 0; }
+    .chat-header button { background: none; border: none; color: white; cursor: pointer; font-size: 18px; }
+    .chat-body { padding: 15px; height: 250px; overflow-y: auto; background: #fff; }
+    .message { padding: 10px; margin-bottom: 10px; font-size: 13px; max-width: 85%; border-radius: 8px; }
+    .message.bot { background: #f1f1f1; color: #000; border-bottom-left-radius: 0; }
+    .message.user { background: #000; color: white; margin-left: auto; border-bottom-right-radius: 0; }
+    .quick-replies { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+    .quick-replies button { padding: 12px; font-size: 12px; background: white; border: 1px solid #ccc; border-radius: 20px; cursor: pointer; text-align: left; transition: 0.2s; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- WELCOME SPLASH SCREEN -->
+    <div id="welcomeScreen">
+        <h1>KING'S LUXURY</h1>
+        <p>Where your dream watches live</p>
+        <div class="loader"></div>
+    </div>
+
+    <!-- Side Menu -->
+    <div id="sideMenu" class="side-menu">
+        <div class="menu-header">
+            <h2>MENU</h2>
+            <button onclick="toggleMenu()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <ul>
+            <li><a href="#" onclick="showMainStore()">Home</a></li>
+            <li><a href="#" onclick="showMainStore()">All Watches</a></li>
+            <li><a href="#">Glasses (Coming Soon)</a></li>
+            <li><a href="https://www.facebook.com/share/1Ebhw8YAr5/?mibextid=wwXIfr" target="_blank">Contact Us on Facebook</a></li>
+        </ul>
+    </div>
+
+    <!-- Search Overlay -->
+    <div id="searchOverlay" class="search-overlay">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search watches..." onkeyup="searchProducts()">
+            <button onclick="toggleSearch()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div id="searchResults" class="search-results"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">KING'S LUXURY</div>
+        <div class="nav-icons">
+            <div class="cart-wrapper" onclick="toggleCart()">
+                <i class="fa-solid fa-bag-shopping" style="font-size: 20px;"></i>
+                <span id="cartCount" class="cart-badge">0</span>
+            </div>
+            <i class="fa-regular fa-user" onclick="checkUserStatus()"></i>
+            <i class="fa-solid fa-magnifying-glass" onclick="toggleSearch()"></i>
+            <i class="fa-solid fa-bars" onclick="toggleMenu()"></i>
+        </div>
+    </header>
+
+    <!-- MAIN STORE VIEW -->
+    <div id="mainStoreView" style="display:none;">
+        <section class="title-section">
+            <h1>KING'S CORE</h1>
+        </section>
+
+        <div class="filter-bar">
+            <span id="itemCount">Items sorted by Recommended</span>
+            <span onclick="toggleSort()">Filter and sort <i class="fa-solid fa-sliders"></i></span>
+        </div>
+
+        <div id="sortMenu" style="display:none; position:absolute; right:20px; background:#fff; border:1px solid #eee; box-shadow:0 4px 10px rgba(0,0,0,0.1); z-index:500;">
+            <p onclick="sortProducts('low')" style="padding:10px 20px; font-size:12px; cursor:pointer; border-bottom:1px solid #eee;">Price: Low to High</p>
+            <p onclick="sortProducts('high')" style="padding:10px 20px; font-size:12px; cursor:pointer; border-bottom:1px solid #eee;">Price: High to Low</p>
+            <p onclick="sortProducts('name')" style="padding:10px 20px; font-size:12px; cursor:pointer;">Name: A-Z</p>
+        </div>
+
+        <main class="product-grid" id="productGrid"></main>
+    </div>
+
+    <!-- SIGNUP VIEW -->
+    <div id="signupView" style="display: none;">
+        <div class="form-container">
+            <h2>SIGN UP FOR KING'S LUXURY</h2>
+            <p style="font-size:12px; color:#666; margin-bottom:20px;">Create an account to track your orders and get exclusive updates.</p>
+            <input type="text" id="signupName" class="form-input" placeholder="Full Name">
+            <input type="email" id="signupEmail" class="form-input" placeholder="E-Mail Address">
+            <input type="tel" id="signupPhone" class="form-input" placeholder="WhatsApp Number (e.g. 2348012345678)">
+            <button class="form-btn" onclick="processSignup()">CREATE ACCOUNT</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="dashboardView" class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Welcome, <span id="dashName" style="font-weight:bold;"></span>!</h2>
+            <button class="logout-btn" onclick="logoutUser()">Logout</button>
+        </div>
+        <p style="font-size:14px; color:#555;">From your account dashboard, you can view your recent orders and manage your shipping details.</p>
+        
+        <div class="order-history-box">
+            <h3 style="font-size:14px; margin-bottom:10px;">Recent Orders</h3>
+            <p style="font-size:12px; color:#888;">You have no recent orders yet.</p>
+            <button onclick="showMainStore()" style="margin-top:15px; padding:10px 20px; background:#000; color:#fff; border:none; font-size:12px; cursor:pointer;">START SHOPPING</button>
+        </div>
+    </div>
+
+    <!-- PRODUCT MODAL -->
+    <div id="productModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            
+            <div class="modal-scroll-area">
+                <div class="modal-image-container">
+                    <span id="saleBadge" class="sale-badge" style="display:none;">SALE</span>
+                    <img id="modalMainImg" src="" alt="Product">
+                    <div class="thumbnail-container" id="modalThumbnails"></div>
+                </div>
+                <div class="modal-info">
+                    <h2 id="modalTitle"></h2>
+                    <div class="modal-price-box">
+                        <span id="modalOldPrice" class="modal-old-price" style="display:none;"></span>
+                        <span id="modalNewPrice" class="modal-new-price"></span>
+                    </div>
+                    <p id="modalDesc" class="modal-desc"></p>
+                </div>
+            </div>
+
+            <!-- Premium Sticky Buttons -->
+            <div class="modal-actions">
+                <button onclick="addToCart()" class="btn-add">ADD TO BAG</button>
+                <a href="#" id="whatsappBtn" target="_blank" class="btn-wa">
+                    <i class="fa-brands fa-whatsapp"></i> INQUIRE
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- CART MODAL -->
+    <div id="cartModal" class="cart-modal">
+        <div class="cart-content">
+            <span class="close-btn" onclick="toggleCart()">&times;</span>
+            <h2 style="font-weight:normal;">Your Shopping Bag</h2>
+            <div class="cart-items" id="cartItemsContainer"></div>
+            <div style="padding-top:20px; border-top:1px solid #eee;">
+                <button onclick="checkoutCart()" class="checkout-btn">
+                    <i class="fa-brands fa-whatsapp"></i> Checkout on WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Bot -->
+    <div class="chat-widget">
+        <button class="chat-btn" onclick="toggleChat()"><i class="fa-solid fa-comment-dots"></i></button>
+        <div class="chat-box" id="chatBox" style="display: none;">
+            <div class="chat-header">
+                <h3>Customer Service</h3>
+                <button onclick="toggleChat()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="chat-body" id="chatBody">
+                <div class="message bot">Hello! Welcome to King's Luxury. How can I help you today?</div>
+                <div class="quick-replies">
+                    <button onclick="botReply('How much is delivery within Jalingo??')">Delivery to Jalingo?</button>
+                    <button onclick="botReply('How much is shipping?')">Shipping cost?</button>
+                    <button onclick="botReply('I want to talk to a human')">Talk to a human</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="gucci-footer">
+        <div class="footer-section">
+            <h3>SIGN UP FOR KING'S UPDATES</h3>
+            <p class="footer-text">Get exclusive updates on the collection's launch.</p>
+            <div class="footer-input" onclick="checkUserStatus()">
+                <p>Click here to Sign Up</p>
+                <i class="fa-solid fa-chevron-right"></i>
+            </div>
+        </div>
+        <div class="footer-section">
+            <div class="footer-dropdown" onclick="toggleFooterMenu()">
+                <h3>MAY WE HELP YOU?</h3>
+                <i class="fa-solid fa-chevron-up" id="footerArrow"></i>
+            </div>
+            <ul class="footer-links" id="footerLinks">
+                <li><a href="https://www.facebook.com/share/1Ebhw8YAr5/?mibextid=wwXIfr" target="_blank">Contact Us on Facebook</a></li>
+                <li><a href="#">FAQs</a></li>
+            </ul>
+        </div>
+        <div class="footer-bottom">
+            <p>Email: <a href="mailto:Kingsluxury111@gmail.com">Kingsluxury111@gmail.com</a></p>
+            <p>WhatsApp: <a href="https://wa.me/2349034034444" target="_blank">+234 903 403 4444</a></p>
+        </div>
+    </footer>
+
+    <script>
+    // ==========================================
+    // 1. YOUR 100 PRODUCTS (Clean & Formatted)
+    // ==========================================
+    const products = [
+        {
+            id: 1, name: "Richard Mille RM Ferrari", price: 85000, originalPrice: 100000,
+            desc: "An iconic collaboration piece featuring the legendary Ferrari branding.",
+            images: ["https://i.postimg.cc/FRFn9k9q/27DA9224-6724-4EBA-BCC1-B745C93097C5.jpg","https://i.postimg.cc/ZRYDTvTX/BA4EF175-14B8-406F-B667-DF5BB77AD6E3.jpg","https://i.postimg.cc/cH15sts2/A0442153-6253-4457-9938-A6C1C3095784.jpg"]
+        },
+        {
+            id: 2, name: "Rolex Land Dweller Ice Blue", price: 50000,
+            desc: "A stunning tribute to the classic Land-Dweller.",
+            images: ["https://i.postimg.cc/59SLBKSv/8B01EE2F-BD6F-4C03-B79A-307B24834F2B.jpg","https://i.postimg.cc/PfQYWVQY/7929A640-4CBA-42E1-AC70-6FCA311C127F.jpg","https://i.postimg.cc/PfQYWVQ1/88DD727A-28BC-4E68-949D-57A42488EF83.jpg"]
+        },
+        {
+            id: 3, name: "Casio Classic", price: 18000,
+            desc: "The ultimate reliable timepiece. Rugged, water-resistant.",
+            images: ["https://i.postimg.cc/MZ3KJy66/F1CF5A29-64DE-423D-997B-EC7163355B93.jpg","https://i.postimg.cc/FFCsXjrs/46F70F19-220A-45DD-9113-3C0784ED71BC.jpg","https://i.postimg.cc/v82HwWY8/74AD512A-D55A-4C84-ACAD-4351B8388944.jpg"]
+        },
+        {
+            id: 4, name: "Richard Mille RM FSG", price: 18000,
+            desc: "A sporty and sleek timepiece with a bold skeleton dial.",
+            images: ["https://i.postimg.cc/rphFyW1j/7A4EA2C2-33F8-4F15-9651-B4881B4178CC.jpg","https://i.postimg.cc/bv6NYbxm/BD837FF2-B797-4185-9A97-45275B083BD3.jpg","https://i.postimg.cc/bv6NYbxT/C72D4382-4034-477F-83B9-1EC236766732.jpg"]
+        },
+        {
+            id: 5, name: "G-Shock GA-700", price: 35000,
+            desc: "Built to survive the toughest environments.",
+            images: ["https://i.postimg.cc/L6MRpNdh/9AB371EB-8D2B-4DC8-B566-4909176FBE54.jpg","https://i.postimg.cc/qMd0Tjfz/FB13850C-2A9E-4301-A9EC-D7728135509E.jpg","https://i.postimg.cc/nctZJ08z/1A476E1D-9409-4752-90B8-0327823C5BA1.jpg"]
+        },
+        {
+            id: 6, name: "Rick", price: 40000,
+            desc: "A versatile and stylish watch available in striking colors.",
+            images: ["https://i.postimg.cc/qvRFV37T/7A6E3CD6-1C0E-4CD1-9BA0-16AA1B5E33C0.jpg","https://i.postimg.cc/0yQ4RwyF/BED6152D-C441-4937-B0DC-E9CEDE3C2168.jpg","https://i.postimg.cc/6p3PJvQK/11FA85C9-2A8D-4F53-BDE9-BF0151872ECA.jpg"]
+        },
+        {
+            id: 7, name: "Tomi Black Square", price: 30000,
+            desc: "A minimalist square-faced watch that brings a modern edge.",
+            images: ["https://i.postimg.cc/J0pQPpZz/2B4E9F72-6215-44C1-911A-B33F68F1F080.jpg","https://i.postimg.cc/gjgKNg8z/CC763621-C5BB-4F5B-A646-F0A3FC82776A.jpg","https://i.postimg.cc/tJBz2BWg/7C2982B9-538F-44F4-A5BC-36028BD04D4F.jpg"]
+        },
+        {
+            id: 8, name: "Richard Mille RM White King", price: 28000,
+            desc: "Stand out with the White King. Striking skeletonized design.",
+            images: ["https://i.postimg.cc/RV87h6Tp/16736236-8CB7-4926-B0A1-DE2596A80448.jpg","https://i.postimg.cc/4NM6y71F/E5C578DA-3D59-40E0-9F0E-74027185C478.jpg","https://i.postimg.cc/kXZQG6yp/B81DA3C4-EC85-48CE-A7A0-19498BE1791A.jpg"]
+        },
+        {
+            id: 9, name: "Montblanc", price: 18500,
+            desc: "A sophisticated chronograph with a classic design.",
+            images: ["https://i.postimg.cc/d1H7fpNQ/37059D7C-940A-4F4D-BADC-553E7CC09C2D.jpg","https://i.postimg.cc/26cqtM98/297F8B94-1A85-4532-A627-0990E0025D65.jpg","https://i.postimg.cc/507HrTKx/E370682A-BA48-4F2B-B2D7-8D5A849BEE7A.jpg"]
+        },
+        {
+            id: 10, name: "Richard Mille Yellow Baby", price: 28000,
+            desc: "A bold and vibrant timepiece with a striking yellow accent.",
+            images: ["https://i.postimg.cc/CKBwmhrR/38AC1C50-B85D-4532-9F49-A397D1F756BE.jpg","https://i.postimg.cc/7LGqmHtf/61521DD6-16FE-4694-8DF2-268EC77E0204.jpg","https://i.postimg.cc/kghnQ6sN/2D4ECB37-AB5E-43A2-AC37-55DDD9713B93.jpg"]
+        },
+        {
+            id: 11, name: "Poedager", price: 25000,
+            desc: "A sleek and modern watch with a sophisticated dial.",
+            images: ["https://i.postimg.cc/02pbvh3H/AB204FA1-DA14-4A3A-908B-353C215E3725.jpg","https://i.postimg.cc/xTKcQB7Z/390A1FB0-B6A5-447E-898A-88F2BE852903.jpg","https://i.postimg.cc/bNQsP4MB/703F9988-59B0-470D-ADB5-D4CA571207A4.jpg"]
+        },
+        {
+            id: 12, name: "Montblanc Classic", price: 18500,
+            desc: "A timeless classic. Clean, easy-to-read dial.",
+            images: ["https://i.postimg.cc/wBSp7jRP/15AF3942-3513-4999-A4FA-847865765A87.jpg","https://i.postimg.cc/Lsrpn8gw/3BCD1C02-FF64-4E5F-B6DB-176FBBD1BE72.jpg","https://i.postimg.cc/MGhSvpfh/A7DC6376-8142-4378-9D4B-E8F321EBDDC5.jpg"]
+        },
+        {
+            id: 13, name: "Casio Digital", price: 18800,
+            desc: "A reliable and durable digital watch for everyday use.",
+            images: ["https://i.postimg.cc/85PhfT8t/47A90EDD-1286-4B1A-AD47-C8BD4DC7DC77.jpg","https://i.postimg.cc/mD2Q1Txm/31D210B3-6D51-43A6-BDC2-11A3AF7D34FC.jpg"]
+        },
+        {
+            id: 14, name: "Royal Oak Offshore", price: 45000,
+            desc: "A masterpiece of luxury and sport. Bold octagonal bezel.",
+            images: ["https://i.postimg.cc/4y3k07Dy/42AE881B-737E-4DD3-9F12-070B854A0969.jpg","https://i.postimg.cc/vTmFKgJc/EBFC9FF3-4C49-4BE4-978A-8A3588A2C1BC.jpg","https://i.postimg.cc/Wz4LyFBt/F0009349-6B38-4017-8874-505950466141.jpg"]
+        },
+        {
+            id: 15, name: "Poedager Sport", price: 25000,
+            desc: "Designed for the active lifestyle. Durable strap.",
+            images: ["https://i.postimg.cc/LszJ9wn5/8B07AA54-8EAA-4945-9082-BC96446C0BF1.jpg","https://i.postimg.cc/Gpk4LVH9/FE2E061B-ED82-42D6-BA62-8930FD460DE6.jpg","https://i.postimg.cc/bNQsP4MB/703F9988-59B0-470D-ADB5-D4CA571207A4.jpg"]
+        },
+        {
+            id: 16, name: "Cartier Tank", price: 10000,
+            desc: "An elegant and iconic rectangular watch. Symbol of class.",
+            images: ["https://i.postimg.cc/CLrNVBq6/611BD90E-D1DD-4E0C-85DB-53878861CD9E.jpg","https://i.postimg.cc/7YtVyG2s/1360F61C-7A15-469C-ABE2-591F5ADB796F.jpg"]
+        },
+        {
+            id: 17, name: "Classic Dress Glass", price: 9500,
+            desc: "A simple, elegant dress watch with a clean dial.",
+            images: ["https://i.postimg.cc/8PXHVJ6t/B2A4688C-F83F-49B6-9555-368A3C2CF765.jpg","https://i.postimg.cc/VLZRcrC7/EC920941-A6AA-4000-ADE3-7A6893724813.jpg"]
+        },
+        {
+            id: 18, name: "Calvin Klein Minimalist", price: 8500,
+            desc: "Sleek, minimalist watch. Perfect for the modern professional.",
+            images: ["https://i.postimg.cc/sgR2xK7f/27F88D28-FC32-4D9D-BA1C-8ED29914C55E.jpg","https://i.postimg.cc/7ZyLhX0Z/35AA94D7-95DD-4F09-B2C8-436AC45AF403.jpg","https://i.postimg.cc/vZdmTXfH/B0FE1D57-3147-49D2-AA75-4CDBA9105B71.jpg"]
+        },
+        {
+            id: 19, name: "Calvin Klein Classic", price: 8500,
+            desc: "A timeless piece from Calvin Klein. Refined dial.",
+            images: ["https://i.postimg.cc/QdrMCS1H/34FEBD7E-3A39-49F9-AA98-1298C573F6FA.jpg","https://i.postimg.cc/qvd7qQyN/68A9D90D-6C7A-4CDE-BF03-BC0352CE6170.jpg","https://i.postimg.cc/8zVCcwMC/4CFCCFA0-1497-40ED-9BAC-6FC28E50B30C.jpg"]
+        },
+        {
+            id: 20, name: "Rolex Ultra Black", price: 19500,
+            desc: "A modern and stylish watch with a bold face.",
+            images: ["https://i.postimg.cc/15Xd6Z0G/C105F81F-71D3-4AB5-8B8B-D33576E3E3C5.jpg","https://i.postimg.cc/vBdRLS8D/08558562-7C75-4C14-8096-975847133F18.jpg","https://i.postimg.cc/xCSryFjX/39925549-5455-46F3-AA07-8DD51119995F.jpg"]
+        },
+        {
+            id: 21, name: "Skeleton Chronograph", price: 28000,
+            desc: "A mesmerizing skeleton dial reveals the intricate movement.",
+            images: ["https://i.postimg.cc/8CZQw6GY/FE838C66-701E-45EF-9D70-3A80836287ED.jpg","https://i.postimg.cc/Dzxk5Xhp/9220D4C4-0753-48A6-8E9A-27B544D09B4E.jpg","https://i.postimg.cc/8CZQw6G0/4766357B-6CE3-45CE-BB13-9A745270C5DD.jpg"]
+        },
+        {
+            id: 22, name: "Rolex Datejust", price: 20000,
+            desc: "The classic Rolex Datejust. Timeless design.",
+            images: ["https://i.postimg.cc/zGWTnCCK/E42C5A35-8EA8-4F54-BD19-8FD3D891157E.jpg","https://i.postimg.cc/vZ95Wrr9/EFDF385A-E43E-4C06-A200-F57225C706ED.jpg","https://i.postimg.cc/zGWTnCCh/67695D33-9527-4D29-8E3C-EC37A4CA4017.jpg"]
+        },
+        {
+            id: 23, name: "Cartier Santos", price: 20000,
+            desc: "The iconic Cartier Santos. Square case with exposed screws.",
+            images: ["https://i.postimg.cc/jSdDZBJW/62F1BC04-0003-4270-8E94-1658EE55CDE6.jpg","https://i.postimg.cc/BnQjMR1S/B9FD53F0-7D7E-48D3-8227-0801A27A0D72.jpg","https://i.postimg.cc/7ZY5mjTG/C8645D8C-610A-4899-B7DA-DB34104942F1.jpg"]
+        },
+        {
+            id: 24, name: "Daniel Wellington", price: 18000,
+            desc: "A minimalist and elegant watch with a premium leather strap.",
+            images: ["https://i.postimg.cc/4y90C87c/065FFDFD-AFB6-43FF-A6F1-D4498BA07C18.jpg","https://i.postimg.cc/mkHnxdzC/129611D3-BB4E-4FD8-9730-7FF493CAB216.jpg","https://i.postimg.cc/cCnzqDgn/F8AFAB95-C519-4063-8DE6-A75C0C4B6143.jpg"]
+        },
+        {
+            id: 25, name: "TOMI Classic", price: 20000,
+            desc: "A sleek and stylish watch. Clean dial, comfortable strap.",
+            images: ["https://i.postimg.cc/cHkbKv8d/B350C237-E5CC-4583-BC1C-3BA35C01B270.jpg","https://i.postimg.cc/85X0F7rN/A86AF080-04EB-4A30-AA4F-6E9A0A2DDBDD.jpg","https://i.postimg.cc/4d2SKYhZ/2C6BC304-51EC-45F4-9225-A61B7B4EA5A3.jpg"]
+        },
+        {
+            id: 26, name: "G-Shock GA-110", price: 22000,
+            desc: "Rugged and reliable. Bold 3D dial and shock resistance.",
+            images: ["https://i.postimg.cc/WpB81dNr/3A59AA1A-E483-4F85-B41B-BF58AD3FAB9A.jpg","https://i.postimg.cc/85X0F7rN/A86AF080-04EB-4A30-AA4F-6E9A0A2DDBDD.jpg","https://i.postimg.cc/bY7gwZy2/524CB34F-AAA8-4D8D-ABC5-B4BA1E6898B8.jpg"]
+        },
+        {
+            id: 27, name: "TOMI Sport", price: 20000,
+            desc: "A sporty and durable watch. Perfect for active lifestyles.",
+            images: ["https://i.postimg.cc/QC1Mb4KP/01F41F7E-2D49-4E3A-B0A5-29FEE49686E0.jpg","https://i.postimg.cc/HnjF3wCX/D8C5BF9A-A5D8-4223-B4EC-73C4BD5FB30F.jpg","https://i.postimg.cc/0jrhZYqm/31DCEA11-57F5-4C43-9969-06A1E437DB72.jpg"]
+        },
+        {
+            id: 28, name: "Hublot Classic Fusion", price: 22000,
+            desc: "Bold and luxurious. Striking design and premium materials.",
+            images: ["https://i.postimg.cc/C5kKNPfd/EDF899AE-E8EB-4F3B-8C44-EFC58347F55D.jpg","https://i.postimg.cc/y6QH9dzh/1776AC72-A071-41C1-89E5-E409D336E2D8.jpg","https://i.postimg.cc/HWZg5xCw/350224C2-AE12-4279-A704-239506B115B2.jpg"]
+        },
+        {
+            id: 29, name: "SRK Diamond", price: 24000,
+            desc: "A glamorous watch featuring a diamond-studded bezel.",
+            images: ["https://i.postimg.cc/C1W1bT5m/829AA612-6251-445C-A3EE-075630715A98.jpg","https://i.postimg.cc/tR5S6jXP/1472FC1E-B214-45F2-B736-6928B3F3C6BA.jpg","https://i.postimg.cc/x8t6VKxc/03421347-0B74-405C-9386-82B47805A2ED.jpg"]
+        },
+        {
+            id: 30, name: "Rolex Datejust Two-Tone", price: 18000,
+            desc: "A stunning two-tone Rolex Datejust. Steel and gold.",
+            images: ["https://i.postimg.cc/15Xd6Z0G/C105F81F-71D3-4AB5-8B8B-D33576E3E3C5.jpg","https://i.postimg.cc/vBdRLS8D/08558562-7C75-4C14-8096-975847133F18.jpg","https://i.postimg.cc/xCSryFjX/39925549-5455-46F3-AA07-8DD51119995F.jpg"]
+        },
+        {
+            id: 31, name: "G-Shock Mudmaster", price: 25000,
+            desc: "The ultimate rugged G-Shock. Built for extreme conditions.",
+            images: ["https://i.postimg.cc/DZW0Wyvc/7BF241D1-7928-47EE-BB70-10650D5E8384.jpg","https://i.postimg.cc/Qd1M1xTt/B546E20D-CACF-48FC-943E-8EB1F1869B12.jpg","https://i.postimg.cc/FH3K3sLz/22E63C8C-AA40-4F7C-968A-480EAE9CB86B.jpg"]
+        },
+        {
+            id: 32, name: "Fendi Sunglasses", price: 10000,
+            desc: "Chic and stylish sunglasses. Add a touch of luxury.",
+            images: ["https://i.postimg.cc/K8ThfBMf/EA88892B-FEC3-4F67-9467-96AF7F6A35BF.jpg","https://i.postimg.cc/PqksRJWF/352FDAFF-3F09-42B0-8678-7EE52D4ADFC4.jpg"]
+        },
+        {
+            id: 33, name: "Designer Sunglasses", price: 12000,
+            desc: "Stylish designer sunglasses with a sleek frame.",
+            images: ["https://i.postimg.cc/9Mwc6K4L/28E4F619-A72E-482B-ACF0-DAF0F5A7A4C9.jpg","https://i.postimg.cc/ZRvJG297/B2AD0AA0-CDA3-44A8-A076-E05541942349.jpg"]
+        },
+        {
+            id: 34, name: "Paxiyal Watch", price: 14000,
+            desc: "Modern and elegant watch with a clean dial.",
+            images: ["https://i.postimg.cc/BZyK1fc6/B4014520-9B6F-4B2B-B4AD-F5A48C1EE6B1.jpg","https://i.postimg.cc/9XS7qHtf/B01DABCD-ECE5-4F00-9E81-0D3156FF9A97.jpg","https://i.postimg.cc/BZyK1fc6/B4014520-9B6F-4B2B-B4AD-F5A48C1EE6B1.jpg"]
+        },
+        {
+            id: 35, name: "Richard Mille RM 055", price: 20000,
+            desc: "Bold and sporty. Lightweight design with skeleton dial.",
+            images: ["https://i.postimg.cc/BbyYd7FS/AB911A1D-F8BB-4E8B-A4F7-A155617B9A0D.jpg","https://i.postimg.cc/VvTG3ZtY/C2AE2499-5150-43DE-B810-C0FEDDC45C42.jpg","https://i.postimg.cc/tJfSLv69/4C1A7F39-57B0-4752-8554-66CB56B59C00.jpg"]
+        },
+        {
+            id: 36, name: "Rolex Presidentual", price: 50000,
+            desc: "The ultimate symbol of success. Day and date display.",
+            images: ["https://i.postimg.cc/wxs78F7y/E998C1C7-68C6-4756-9004-C568CE1CC971.jpg","https://i.postimg.cc/ZYyCtjCv/0674B65B-7DCF-496D-9BD3-78EC3ABDFE46.jpg","https://i.postimg.cc/9Xqr51rq/2BA131F6-FA6F-4B56-BE73-4196D181F7C8.jpg"]
+        },
+        {
+            id: 37, name: "G-Shock Resist", price: 68000,
+            desc: "Tough and durable. Built to resist shocks and water.",
+            images: ["https://i.postimg.cc/Hs4WN6Tk/82617532-C122-4843-AF19-B95E5E6DB235.jpg","https://i.postimg.cc/RVQCYgvW/CDB3AE54-D094-4C2D-B430-036ACB30ADD9.jpg","https://i.postimg.cc/c4M1zFd6/FE64C691-08B4-487F-936F-D858FC8466DC.jpg"]
+        },
+        {
+            id: 38, name: "Patek Philippe Nautilus", price: 18000,
+            desc: "The iconic Nautilus. Luxurious sports watch.",
+            images: ["https://i.postimg.cc/bwp0XVbT/34C7BA15-2BFD-4528-AB3D-7FEED98697E1.jpg","https://i.postimg.cc/kgqNrY8w/71169A00-5570-44CD-A833-F15A23F161C0.jpg","https://i.postimg.cc/Bn45W7DC/E5DD7FE6-2BE1-4E3D-9A33-04038826B4A4.jpg"]
+        },
+        {
+            id: 39, name: "ORUSS Chronograph", price: 24000,
+            desc: "Sophisticated chronograph with a detailed dial.",
+            images: ["https://i.postimg.cc/SR5MnVt7/0AC8174A-8ECA-4E6E-B0C5-A4D3BE6E3986.jpg","https://i.postimg.cc/1XTq8MY0/F17B49FB-D7AC-4E9E-BE7D-28C5120DE8D8.jpg","https://i.postimg.cc/WzKkdSfw/1E986EC4-C695-4DF6-9A10-C7C8AB1C7DF8.jpg"]
+        },
+        {
+            id: 40, name: "Kames Watch", price: 25000,
+            desc: "Stylish and reliable. Classic design.",
+            images: ["https://i.postimg.cc/BZkWSHn1/2F810E79-4706-4BD9-AB91-192E931382FB.jpg","https://i.postimg.cc/L61cn5Js/3A7E8C46-1B54-47BC-8512-E7449E1ACBB2.jpg","https://i.postimg.cc/SQ30SCxM/B22BA8E0-EFFE-43C7-875E-CE997DB6EA9F.jpg"]
+        },
+        {
+            id: 41, name: "Richard Mille RM 11-03", price: 32000,
+            desc: "High-performance watch. Complex skeleton dial.",
+            images: ["https://i.postimg.cc/kMK4dJnm/A5FB9705-469D-44B2-AEE2-45D2A0520160.jpg","https://i.postimg.cc/fWmLhzwh/78B374F9-6E52-4525-9584-9B48FBF46552.jpg","https://i.postimg.cc/dQr1KsqF/DB382BDC-4F2B-4D31-9ABB-FAAEDD3482FD.jpg"]
+        },
+        {
+            id: 42, name: "G-Shock GA-2100", price: 22000,
+            desc: "The 'CasiOak'. Slim and stylish with octagonal bezel.",
+            images: ["https://i.postimg.cc/0N52wpYC/93F2F6A5-3CEC-4A60-9E3D-467FFEEF7193.jpg","https://i.postimg.cc/q7BM38sx/CBA4775D-3882-439A-91AA-2FA561C42BB6.jpg","https://i.postimg.cc/7LPY2g3V/1C552762-3CA8-4A23-846E-233DF5C5777D.jpg"]
+        },
+        {
+            id: 43, name: "Rolex Submariner", price: 130000,
+            desc: "The legendary Submariner. Classic dive watch.",
+            images: ["https://i.postimg.cc/brxKg5pX/888F00D6-999A-4184-817D-FCBA3A5FDED9.jpg","https://i.postimg.cc/kMW37287/57E9FD27-A559-4EF3-9EC6-ED19B5A29383.jpg","https://i.postimg.cc/Fzy2p6m2/11537491-87C3-4875-B759-B1552FC0B9F7.jpg"]
+        },
+        {
+            id: 44, name: "Elegant Dress Watch", price: 9000,
+            desc: "Simple and elegant dress watch. Perfect for formal occasions.",
+            images: ["https://i.postimg.cc/g2Z37bQ7/DE52BBD4-1F5B-4621-97CC-C26928599E77.jpg","https://i.postimg.cc/g2Z37bQB/DF9797EE-F463-4518-ADF0-27BD5B2DEB24.jpg"]
+        },
+        {
+            id: 45, name: "Tomi Luxury", price: 22000,
+            desc: "Luxurious watch with sophisticated design.",
+            images: ["https://i.postimg.cc/pXDFQJjd/793AAC6F-432F-41D9-AA16-8A4D6A036D8D.jpg","https://i.postimg.cc/15pq0rFD/18A78FAC-AA9C-433C-A3BD-AF6F97101414.jpg","https://i.postimg.cc/4Nz9vQcd/E3D3684F-190A-4A4B-AAA7-B7D0569437D8.jpg"]
+        },
+        {
+            id: 46, name: "Richard Mille RM 35-02", price: 30000,
+            desc: "Sporty and elegant. Skeleton dial and comfortable strap.",
+            images: ["https://i.postimg.cc/C1khymSG/A93F5CAB-B53A-435E-AD6D-A2BEE423FAE7.jpg","https://i.postimg.cc/HxXYGBdz/5F6864A2-B668-457C-B7A4-26F322C36679.jpg","https://i.postimg.cc/KzBGXJxL/3841BAFE-44FC-48B4-9B94-FA3C66A44773.jpg"]
+        },
+        {
+            id: 47, name: "Richard Mille RM 67-02", price: 30000,
+            desc: "The lightest watch. Designed for athletes.",
+            images: ["https://i.postimg.cc/JnPThWrV/18CBD577-4CFD-49F4-A523-E4AA23409910.jpg","https://i.postimg.cc/ZRVfqhbz/47D25E1E-D63D-441A-B950-BA906D060F71.jpg","https://i.postimg.cc/G2qMp1c5/6F3FD444-9EB8-4F67-8962-ACB2E8796EDB.jpg"]
+        },
+        {
+            id: 48, name: "Tomi Sport", price: 22000,
+            desc: "Sporty and durable watch for active lifestyles.",
+            images: ["https://i.postimg.cc/7YgKC7Y7/56EAB1B1-5F9A-40AC-8702-2E21B5464487.jpg","https://i.postimg.cc/5NwsHvN8/A74CE036-494A-40FB-8B8B-9E3E9D0C76EC.jpg","https://i.postimg.cc/c4QFKY4n/70C053B7-C553-4139-A9F5-C4598A856F44.jpg"]
+        },
+        {
+            id: 49, name: "Designer Sunglasses", price: 9500,
+            desc: "Stylish sunglasses. Add a touch of glamour.",
+            images: ["https://i.postimg.cc/3JnDbJtZ/495DD7DD-CCA3-4487-83E1-C93C03C15777.jpg","https://i.postimg.cc/fTw9K0fp/69F79CE3-B548-4D76-9019-2A2A430FA2E1.jpg"]
+        },
+        {
+            id: 50, name: "Luxury Watch", price: 24000,
+            desc: "Luxurious watch with sophisticated design.",
+            images: ["https://i.postimg.cc/d3NX6N00/4B03AD38-4131-43ED-B53D-1FB52194031A.jpg","https://i.postimg.cc/Bb7yp7vt/977C1E1D-4D8B-4B52-9187-D053DE751FE3.jpg","https://i.postimg.cc/brVMgVvJ/A33C5187-341D-4DC7-AF58-A9E1715163BF.jpg"]
+        },
+        {
+            id: 51, name: "Rolex Daytona", price: 34000,
+            desc: "The iconic Daytona. Chronograph for racing.",
+            images: ["https://i.postimg.cc/dVqVkLyq/027D1BFC-224C-4EAF-BFA1-AF68959D97F1.jpg","https://i.postimg.cc/4xJx7m9s/B16D3EC1-3A61-48BD-8083-4A4278EC14DB.jpg","https://i.postimg.cc/nhHhjCDZ/7E38FD81-096B-47B9-A91B-8FEB798D839C.jpg"]
+        },
+        {
+            id: 52, name: "VALENZO Watch", price: 18500,
+            desc: "Stylish and elegant. Clean dial.",
+            images: ["https://i.postimg.cc/yxzf6qr5/05315AEC-472A-4869-8512-F992B61AD497.jpg","https://i.postimg.cc/vTdP8RSK/39DEA139-DF13-4D71-AEDE-0EB2458688E6.jpg","https://i.postimg.cc/NFwNGhPS/E321C214-FE84-4485-B0E9-4125188BE148.jpg"]
+        },
+        {
+            id: 53, name: "Classic Watch", price: 24000,
+            desc: "Classic and timeless. Clean dial and comfortable strap.",
+            images: ["https://i.postimg.cc/593G9ybm/7924E428-3842-4185-BFA7-1297AE854559.jpg","https://i.postimg.cc/ZYcgYn4x/6BC024CA-79FF-4409-AAD5-356EE542D2D3.jpg","https://i.postimg.cc/RCR8Ch4R/D0A73A25-7148-40CE-A460-F3522EF2FB5F.jpg"]
+        },
+        {
+            id: 54, name: "Designer Sunglasses", price: 9500,
+            desc: "Stylish sunglasses. Perfect for sunny days.",
+            images: ["https://i.postimg.cc/cHTmWKw9/EB706C8C-2DAF-48E5-8AC2-2B634E0D642B.jpg","https://i.postimg.cc/wvFVztLW/A480EF96-FF0B-42F4-A504-8AEA59B67FD4.jpg"]
+        },
+        {
+            id: 55, name: "Luxury Watch", price: 24000,
+            desc: "Luxurious watch with sophisticated design.",
+            images: ["https://i.postimg.cc/1tYqMDp1/536867F6-2FB6-448E-ACDD-9D5DFD22E5D8.jpg","https://i.postimg.cc/tTmxDFhj/472F4336-BF73-4680-BB06-427B133F5C98.jpg","https://i.postimg.cc/G2Syzvk1/526F39F7-2FB8-4AD9-9FF0-C2479BE90A0D.jpg"]
+        },
+        {
+            id: 56, name: "Patek Philippe Calatrava", price: 35000,
+            desc: "The purest expression of Patek Philippe style.",
+            images: ["https://i.postimg.cc/tJqXcgHX/941FF628-9AC5-4D9C-BA4F-2A5A3AC7F861.jpg","https://i.postimg.cc/SRSyPKpm/9FBEF9F3-E5D8-48E3-840E-F7EEB9D3A558.jpg","https://i.postimg.cc/6qW9PQNt/8F6AAD2A-F622-4A11-B9FA-F797175565F9.jpg"]
+        },
+        {
+            id: 57, name: "Hublot Big Bang", price: 45000,
+            desc: "Bold and luxurious. Striking design.",
+            images: ["https://i.postimg.cc/bYkkcVfY/F242E097-59FC-417E-B1D7-BEDBC3DD9EED.jpg","https://i.postimg.cc/1Rwwh71m/7FC879CA-6C33-4929-9308-EE414B273063.jpg","https://i.postimg.cc/J7ZZVYC1/D3A8C383-A783-4D2D-8C67-BDB0028630B9.jpg"]
+        },
+        {
+            id: 58, name: "Balenciaga Sunglasses", price: 10000,
+            desc: "Chic and stylish. Add a touch of luxury to your look.",
+            images: ["https://i.postimg.cc/d3xz9QQD/9E9335D9-3EBB-47C1-BC90-39FD910F7780.jpg","https://i.postimg.cc/N0kSzkG2/119F64A2-1062-434E-A019-DF07ABC17764.jpg"]
+        },
+        {
+            id: 59, name: "Gold Necklace Chain", price: 15000,
+            desc: "Luxurious gold necklace chain. Add elegance to any outfit.",
+            images: ["https://i.postimg.cc/qRP2tLRd/FF6B48EF-2F13-4F4E-AC25-67761ABA8B5B.jpg"]
+        },
+        {
+            id: 60, name: "Silver Necklace Chain", price: 15000,
+            desc: "Stylish silver necklace chain. Perfect for everyday wear.",
+            images: ["https://i.postimg.cc/HxqbJ2xm/FCAE72C0-FEF1-416E-8171-081D6730F215.jpg"]
+        },
+        {
+            id: 61, name: "Hublot Classic Fusion", price: 25000,
+            desc: "Bold and luxurious. Striking design.",
+            images: ["https://i.postimg.cc/0N1n39vB/CFCA0DA6-F3FE-4A2D-849E-CDE89A693771.jpg","https://i.postimg.cc/6QxcSBKF/89DA0563-3A0B-4812-A029-2DA5948B15BC.jpg","https://i.postimg.cc/xdV579Qh/AD76BDCF-B16C-4FE6-8CB2-7F6CF39926BD.jpg"]
+        },
+        {
+            id: 62, name: "Gold Hand Chain", price: 7500,
+            desc: "Delicate and elegant hand chain. Add glamour to any outfit.",
+            images: ["https://i.postimg.cc/NM3Ry4Mc/6C9CBD24-6CF9-4B2F-9A79-9F3CF1FE9B01.jpg"]
+        },
+        {
+            id: 63, name: "Silver Hand Chain", price: 6500,
+            desc: "Delicate and elegant hand chain. Add glamour.",
+            images: ["https://i.postimg.cc/nzyqskzf/28F22EBE-5BB1-4F8B-B72F-BF65699A4B2C.jpg"]
+        },
+        {
+            id: 64, name: "Iyoo Cartel", price: 9000,
+            desc: "Unique and stylish piece. Perfect for making a statement.",
+            images: ["https://i.postimg.cc/852LFH5j/18CAB73B-10C9-4E38-AA61-7A943C8B2492.jpg"]
+        },
+        {
+            id: 65, name: "Hublot Big Bang", price: 28000,
+            desc: "Bold and luxurious. Striking design.",
+            images: ["https://i.postimg.cc/PxYjHXvK/B9E9B260-7AF7-4CA5-8B88-969CE31B5A4F.jpg","https://i.postimg.cc/DZLThv4x/1614952E-6051-4A15-9654-C66CF920AC63.jpg","https://i.postimg.cc/V6n8wf0D/8B4A29B9-0015-4760-98B0-242111484120.jpg"]
+        },
+        {
+            id: 66, name: "Chronograph Watch", price: 38000,
+            desc: "Sophisticated chronograph. Detailed dial.",
+            images: ["https://i.postimg.cc/DydwsgZD/78628E99-F7E0-4D1B-99C7-A4FBA3B308C3.jpg","https://i.postimg.cc/L6B8fTXG/842C63A8-D8CF-429C-A5F6-249D8006C586.jpg","https://i.postimg.cc/Wb61rn3C/02D522C1-CE6A-41A3-9316-18704DD6ED72.jpg"]
+        },
+        {
+            id: 67, name: "Sport Watch", price: 28000,
+            desc: "Sporty and durable. Perfect for active lifestyles.",
+            images: ["https://i.postimg.cc/8cvsqgNX/958EACA6-22B4-46C6-B9B2-384716A6B309.jpg","https://i.postimg.cc/rs4zv2MY/CFD5FF9D-8F7B-4BDD-B8F2-2614B1F4D53D.jpg","https://i.postimg.cc/Vvt53PmG/D68A565F-5B2C-4D91-8230-09AD8D81D250.jpg"]
+        },
+        {
+            id: 68, name: "Sport Watch", price: 22000,
+            desc: "Sporty and durable. Perfect for active lifestyles.",
+            images: ["https://i.postimg.cc/G2h2hsrQ/FA08D1A7-E332-468C-A2CD-AB6135071D63.jpg","https://i.postimg.cc/Jn4n4Bmx/DB4F20AF-FBA6-4290-85C9-BCECE814787B.jpg","https://i.postimg.cc/9MFMFqVw/4045BDEB-4A3C-4C11-B3C4-AEB275722A9E.jpg"]
+        },
+        {
+            id: 69, name: "Sport Watch", price: 22000,
+            desc: "Sporty and durable. Perfect for active lifestyles.",
+            images: ["https://i.postimg.cc/fLZd7Lsz/5A8BF285-2E39-4D9E-832E-286E39558EEF.jpg","https://i.postimg.cc/xCYmGCQn/64C52AEE-E380-4087-83F9-92DDD0DFE868.jpg","https://i.postimg.cc/LsjfZPcs/558C3209-E3BB-44D3-8D71-296930429F1E.jpg"]
+        },
+        {
+            id: 70, name: "Desk Lamp Qur'an Speaker", price: 38000,
+            desc: "A beautiful desk lamp with a built-in Qur'an speaker.",
+            images: ["https://i.postimg.cc/rwPg95ZC/A508D177-B728-4A50-9F34-71428D95EED9.jpg","https://i.postimg.cc/XYzxg91F/509B7910-BC9E-481D-9ACE-3718FF82FB68.jpg"]
+        },
+        {
+            id: 71, name: "Aonon Watch", price: 15500,
+            desc: "Stylish and elegant watch. Clean dial.",
+            images: ["https://i.postimg.cc/kMYCKpNZ/A4BD0E46-47DA-4AFF-8EDE-4E7EE9BCBDCE.jpg","https://i.postimg.cc/jq3TPF61/EB0A1053-AD01-495F-9132-E46E36B8F72C.jpg","https://i.postimg.cc/05XvDBGF/CFE6E258-75EF-4806-97DE-0D663338E7E0.jpg"]
+        },
+        {
+            id: 72, name: "G-Shock GA-100", price: 22000,
+            desc: "Rugged and reliable. Bold 3D dial.",
+            images: ["https://i.postimg.cc/bJBcKDF0/DB27FE76-0087-4B94-9197-2EC9541FA637.jpg","https://i.postimg.cc/mD5f0z6Y/FA1912B2-FF74-4343-ABC2-594319F6A2AD.jpg","https://i.postimg.cc/G25wZ8SJ/2B9332B5-A07A-471E-8CDA-EAAF59C75A02.jpg"]
+        },
+        {
+            id: 73, name: "Fendi Sunglasses", price: 9500,
+            desc: "Chic and stylish sunglasses. Add luxury to your look.",
+            images: ["https://i.postimg.cc/7ZZ687Bq/1C3116F9-F745-4D1C-BAA9-4531B2E3697D.jpg","https://i.postimg.cc/W113Lr9T/27813B2D-5888-449D-8576-F9942EC8FA95.jpg"]
+        },
+        {
+            id: 74, name: "Glass Case", price: 4500,
+            desc: "Sleek and protective glass case for your watch.",
+            images: ["https://i.postimg.cc/xdCV13Hk/0A749403-214E-48F9-93E2-2F6FD7E95161.jpg","https://i.postimg.cc/mrDWgyMG/EECC4AE3-81A1-4CA3-B8AB-4FEFB432E39A.jpg"]
+        },
+        {
+            id: 75, name: "Glass Case", price: 4000,
+            desc: "Sleek and protective glass case for your watch.",
+            images: ["https://i.postimg.cc/5t0W2Svb/0CEFA8F9-13A0-4B12-B2EC-DC860545B947.jpg","https://i.postimg.cc/ZqRz5x3B/32B1075B-1DCB-4AAD-963D-53B1020E4B09.jpg"]
+        },
+        {
+            id: 76, name: "Matturi Watch", price: 28000,
+            desc: "Luxurious and elegant. Sophisticated design.",
+            images: ["https://i.postimg.cc/0QTxzKdk/CDD7E2C5-F186-4DCA-8AD6-AB2D0F705C85.jpg","https://i.postimg.cc/nzyZX9YV/68DB2824-E220-4C1F-AD83-7DF6570E0ECF.jpg","https://i.postimg.cc/LXcRJgBH/6620F12E-1C7C-43AA-B7FF-A2685C5394C7.jpg"]
+        },
+        {
+            id: 77, name: "G-Shock GA-800", price: 30000,
+            desc: "Rugged and reliable. Bold 3D dial.",
+            images: ["https://i.postimg.cc/3xYGydt8/4E5ECD6D-055C-41F5-94F6-78B5938AA76C.jpg","https://i.postimg.cc/cL03KrFs/94411386-7009-445C-8915-87E0355A9334.jpg","https://i.postimg.cc/CxS8ZzcM/AF187973-5673-40A7-8BE2-EF6B5D688C6B.jpg"]
+        },
+        {
+            id: 78, name: "Off-White Sunglasses", price: 10000,
+            desc: "Chic and stylish sunglasses. Add a touch of luxury.",
+            images: ["https://i.postimg.cc/fy5NBqQT/0DA7F19D-DDD4-43C4-BF13-450AE42BE455.jpg","https://i.postimg.cc/Kjmb7Swg/3EA27312-8E43-43CF-AA95-D075565CB378.jpg"]
+        },
+        {
+            id: 79, name: "G-Shock GA-900", price: 32000,
+            desc: "Rugged and reliable. Bold 3D dial.",
+            images: ["https://i.postimg.cc/VNXWx3ZL/F5A87518-B89B-4CFB-B8DC-E0BB5AC6F9FA.jpg","https://i.postimg.cc/9fyY6vgX/AE3C6F70-0BF0-4A5C-9408-D5ED56189FD8.jpg","https://i.postimg.cc/mr7yv0pg/1522CBDF-0599-48F2-A9CD-15DBB5F7ECE2.jpg"]
+        },
+        {
+            id: 80, name: "G-Shock GX-56", price: 38000,
+            desc: "Rugged and reliable. Bold 3D dial.",
+            images: ["https://i.postimg.cc/cJj6cHBL/582B5E05-070E-4258-9DB1-7C0305643A84.jpg","https://i.postimg.cc/GpN9j2x3/B7172CAB-96F4-4D23-9E58-241F772719A5.jpg","https://i.postimg.cc/hGwh0j1P/E27F0844-FAB7-455A-A44D-EA254061E660.jpg"]
+        },
+        {
+            id: 81, name: "Dior Sunglasses", price: 12000,
+            desc: "Chic and stylish sunglasses. Add a touch of luxury.",
+            images: ["https://i.postimg.cc/Y0t7NKZF/630404C9-964B-46FE-B229-BE7E23C8DF91.jpg","https://i.postimg.cc/nrnxKbgD/45C9D620-F845-4C82-BC71-DA6A6D55711F.jpg"]
+        },
+        {
+            id: 82, name: "Maybach Sunglasses", price: 12000,
+            desc: "Chic and stylish sunglasses. Add a touch of luxury.",
+            images: ["https://i.postimg.cc/wMFp04Y3/AA2F8429-2AAB-4E17-9CB1-DD774252B46B.jpg","https://i.postimg.cc/j2vbZ3Y2/58B5CF64-AD4F-46BA-8FE2-BB538A2C22A9.jpg"]
+        },
+        {
+            id: 83, name: "Glass Case", price: 3500,
+            desc: "Sleek and protective glass case for your watch.",
+            images: ["https://i.postimg.cc/QMtZdJ5Z/98333B3D-6B8F-4E11-BE18-B24B021C5FF1.jpg","https://i.postimg.cc/W43c1wr2/BDD41ADC-23A8-4A60-BB44-72114B4AE90B.jpg"]
+        },
+        {
+            id: 84, name: "Tomi Classic", price: 25000,
+            desc: "Classic and timeless. Clean dial.",
+            images: ["https://i.postimg.cc/FKY3FqZz/28E1C149-B265-4B40-BC6D-E90DCFE191E2.jpg","https://i.postimg.cc/XvrdNh8p/B5E08FC4-A240-4BD6-86C4-FB2A695B0344.jpg","https://i.postimg.cc/ZqWpYgcR/4C7294BA-E761-4A3A-9FE2-D0E78F09111D.jpg"]
+        },
+        {
+            id: 85, name: "Desk Lamp Qur'an Speaker", price: 35000,
+            desc: "A beautiful desk lamp with a built-in Qur'an speaker.",
+            images: ["https://i.postimg.cc/SK1dDCZC/1CE3CF82-4E38-40DD-9E5A-E91CBB811849.jpg","https://i.postimg.cc/YSDRbYXW/25DC4624-D079-416C-9117-228BCF21AAB1.jpg"]
+        },
+        {
+            id: 86, name: "Desk Lamp Qur'an Speaker", price: 38000,
+            desc: "A beautiful desk lamp with a built-in Qur'an speaker.",
+            images: ["https://i.postimg.cc/85s6Xvqt/C35BEAA7-D3DF-4C05-A3B4-A4576131CC32.jpg","https://i.postimg.cc/cH6nk3VF/FF9CFAF1-732A-4B37-BC2C-633C8C9F8846.jpg"]
+        },
+        {
+            id: 87, name: "Glass Safe Case", price: 3500,
+            desc: "Sleek and protective glass case for your watch.",
+            images: ["https://i.postimg.cc/xC38VRS2/98C92EDF-76FD-4A3D-88A6-62FC268AD100.jpg","https://i.postimg.cc/Gp2nmxYw/F3953356-8A97-4512-8673-552C19D7C3EA.jpg"]
+        },
+        {
+            id: 89, name: "RADO Watch", price: 40000,
+            desc: "Luxurious and elegant. Sophisticated design.",
+            images: ["https://i.postimg.cc/Bb6jm8w1/BEA85DFE-7CFF-4851-ADD1-6E123C52A928.jpg","https://i.postimg.cc/zvByxLPg/98D34A3A-16EC-42DA-B3E1-BFE3EC087899.jpg","https://i.postimg.cc/yxdDLJrR/0AF7BF77-6C46-48AB-97D5-BA2BDF29D66F.jpg"]
+        },
+        {
+            id: 90, name: "REWARD VIP Watch", price: 65000,
+            desc: "Luxurious and elegant. Sophisticated design.",
+            images: ["https://i.postimg.cc/hhRqf6xR/16DD25A5-7E22-4A06-98D8-6D4BF98DA37D.jpg","https://i.postimg.cc/s1CRvqSd/70558990-38DC-429A-BE37-C898DFBE149B.jpg","https://i.postimg.cc/BtfGXkDG/894E67F3-69DA-40E6-A81C-D961B2B5770E.jpg"]
+        },
+        {
+            id: 91, name: "REWARD VIP Watch", price: 65000,
+            desc: "Luxurious and elegant. Sophisticated design.",
+            images: ["https://i.postimg.cc/BvR3rj6G/FB3B5ECF-DBEF-484E-85DC-86AB59209604.jpg","https://i.postimg.cc/pd3vwmTx/327CCB7B-E7C9-429B-8E14-57C097EA49F3.jpg","https://i.postimg.cc/pd3vwmTM/0A488973-65EC-4783-9B57-8AD2D8AF16D8.jpg"]
+        },
+        {
+            id: 92, name: "RADO White Stone", price: 50000,
+            desc: "Luxurious and elegant. White stone dial.",
+            images: ["https://i.postimg.cc/8z3x5qVK/01CD27F0-3059-4931-9597-ECA0B1252866.jpg","https://i.postimg.cc/zGM4B91c/54D05D61-1FCC-4F64-9053-DE0042DCEE46.jpg","https://i.postimg.cc/Cxt91WV6/729C0DD1-D927-4A9B-BD6B-2DAA59DC3C24.jpg"]
+        },
+        {
+            id: 93, name: "Patek Philippe Grand Complications", price: 280000,
+            desc: "The ultimate expression of haute horlogerie.",
+            images: ["https://i.postimg.cc/Wbdn3tbb/23370DA5-8444-4E8F-A0C0-398E393492E2.jpg","https://i.postimg.cc/qMNLRgMk/F1827C31-472C-4476-A51E-B7B355DEC23E.jpg","https://i.postimg.cc/SNnrsjNQ/6FC0110C-C9B3-48A8-85FF-1D40C4F192E6.jpg"]
+        },
+        {
+            id: 94, name: "RADO Ceramic", price: 40000,
+            desc: "Luxurious and elegant. Ceramic case.",
+            images: ["https://i.postimg.cc/QMfS6zXB/5655D374-89B7-4CDE-88A9-A6DFAC4B7BFA.jpg","https://i.postimg.cc/ZqwjfQTB/8BFCC8D3-845E-4BAF-B055-26015024EEC5.jpg","https://i.postimg.cc/bvmL65zZ/96C19761-5B75-4CE9-904D-98AC178275CD.jpg"]
+        },
+        {
+            id: 95, name: "Casio Edifice", price: 22000,
+            desc: "Sporty and stylish. Chronograph dial.",
+            images: ["https://i.postimg.cc/HnzL5b0H/4CE02B12-ABFB-497C-BB1D-98B51E607A4D.jpg","https://i.postimg.cc/HnzL5b0J/86C8DCED-31E8-4346-91AF-AFD9E848C7D8.jpg","https://i.postimg.cc/0NkKzHdM/20A9C65A-7C1F-4FA2-83DD-31D6425F3C3A.jpg"]
+        },
+        {
+            id: 96, name: "Patek Philippe Aquanaut", price: 22000,
+            desc: "Luxurious sports watch. Distinctive embossed dial.",
+            images: ["https://i.postimg.cc/5N9yJk10/E84D025E-7F12-45F0-AB30-4921B9D245F2.jpg","https://i.postimg.cc/656qK1w6/FA484F5B-3754-40C5-9B3E-A3DB4196A831.jpg","https://i.postimg.cc/T3VTWVRy/A9224686-29C3-4C02-A210-3408475CD8DF.jpg"]
+        },
+        {
+            id: 97, name: "Rolex Explorer", price: 36000,
+            desc: "Rugged and reliable. Designed for adventure.",
+            images: ["https://i.postimg.cc/kMvGkP0Z/3B911BA5-1057-4398-BD0E-37791B2C901B.jpg","https://i.postimg.cc/050jLqgb/5FCC8788-BAE9-4F32-B800-ECCD8209F71C.jpg","https://i.postimg.cc/MZmHhJCg/B8D1A438-7EF4-4052-AA5A-83983935977E.jpg"]
+        },
+        {
+            id: 98, name: "Richard Mille RM 27-04", price: 28000,
+            desc: "High-performance. Designed for tennis.",
+            images: ["https://i.postimg.cc/W41cFMD4/4B83BCE8-389F-4C41-BDAC-503B7E6354B9.jpg","https://i.postimg.cc/YSCBG14q/3D1EF0CC-0DCF-452A-BD0F-E4ADA8F42A01.jpg","https://i.postimg.cc/SKxb2WXx/B1A52380-FFB4-4619-8165-F4F2484CC0D8.jpg"]
+        },
+        {
+            id: 99, name: "Audemars Piguet Royal Oak", price: 180000,
+            desc: "The iconic Royal Oak. Luxurious sports watch.",
+            images: ["https://i.postimg.cc/GmdtjFb6/CCF75E97-51F1-487A-8152-3BD61301C22C.jpg","https://i.postimg.cc/Bn4bCTJd/5CEF8D5E-F19A-4D61-B501-44C9F25C92B4.jpg","https://i.postimg.cc/dVw392Jb/7E24148D-5CC6-4856-BD69-F8854E762884.jpg"]
+        },
+        {
+            id: 100, name: "Cartier Ballon Bleu", price: 135000,
+            desc: "Luxurious and elegant. Distinctive rounded case.",
+            images: ["https://i.postimg.cc/NMJm3NjT/149E99F9-CA62-40D0-9A67-816351784511.jpg","https://i.postimg.cc/nzRBydhD/E41C1546-7FA3-4B93-8046-59E483302D77.jpg","https://i.postimg.cc/bJCk76wn/6C9CAE7B-C0B6-4983-A9E6-DCE80CE514FC.jpg"]
+        }
+    ];
+
+    // ==========================================
+    // 2. APP LOGIC (DO NOT EDIT BELOW)
+    // ==========================================
+    
+    let currentProduct = null;
+    let cart = [];
+
+    // WELCOME SCREEN LOGIC
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const welcome = document.getElementById('welcomeScreen');
+            welcome.style.opacity = '0';
+            setTimeout(() => {
+                welcome.style.display = 'none';
+                document.getElementById('mainStoreView').style.display = 'block';
+            }, 1000);
+        }, 2500); 
+    });
+
+    // RENDER PRODUCTS
+    function renderProducts(productArray) {
+        const grid = document.getElementById('productGrid');
+        grid.innerHTML = '';
+        productArray.forEach(product => {
+            const formatPrice = (p) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(p);
+            
+            let priceHTML = `<span class="new-price">${formatPrice(product.price)}</span>`;
+            if (product.originalPrice) {
+                priceHTML = `<span class="old-price">${formatPrice(product.originalPrice)}</span> ${priceHTML}`;
+            }
+
+            grid.innerHTML += `
+                <div class="product-card" onclick="openModal(${product.id})">
+                    <img src="${product.images[0]}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p>${priceHTML}</p>
+                </div>
+            `;
+        });
+        document.getElementById('itemCount').innerText = `${productArray.length} Items sorted by Recommended`;
+    }
+
+    // MODAL
+    function openModal(id) {
+        currentProduct = products.find(p => p.id === id);
+        
+        document.getElementById('modalMainImg').src = currentProduct.images[0];
+        document.getElementById('modalTitle').innerText = currentProduct.name;
+        document.getElementById('modalDesc').innerText = currentProduct.desc;
+        
+        const formatPrice = (p) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(p);
+
+        const saleBadge = document.getElementById('saleBadge');
+        const oldPriceEl = document.getElementById('modalOldPrice');
+        
+        if (currentProduct.originalPrice) {
+            saleBadge.style.display = 'block';
+            oldPriceEl.style.display = 'inline';
+            oldPriceEl.innerText = formatPrice(currentProduct.originalPrice);
+        } else {
+            saleBadge.style.display = 'none';
+            oldPriceEl.style.display = 'none';
+        }
+        document.getElementById('modalNewPrice').innerText = formatPrice(currentProduct.price);
+
+        const thumbContainer = document.getElementById('modalThumbnails');
+        thumbContainer.innerHTML = '';
+        currentProduct.images.forEach(img => {
+            thumbContainer.innerHTML += `<img src="${img}" onclick="document.getElementById('modalMainImg').src='${img}'">`;
+        });
+
+        updateWhatsAppLink();
+        document.getElementById('productModal').style.display = 'flex';
+    }
+
+    // WHATSAPP MESSAGE
+    function updateWhatsAppLink() {
+        const phone = "2349034034444";
+        const formattedPrice = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(currentProduct.price);
+        
+        const text = `Hello King's Luxury! 🛍️\n\nI would like to place an order for:\n\n⌚ *Watch:* ${currentProduct.name}\n🎨 *Color:* Which color is available\n💰 *Price:* ${formattedPrice}\n\nPlease let me know if this is available and how I can proceed with payment and delivery.`;
+
+        document.getElementById('whatsappBtn').href = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    }
+
+    function closeModal() { document.getElementById('productModal').style.display = 'none'; }
+
+    // CART LOGIC
+    function addToCart() {
+        const existingItem = cart.find(item => item.id === currentProduct.id);
+        if (existingItem) {
+            existingItem.qty += 1;
+        } else {
+            cart.push({ ...currentProduct, qty: 1 });
+        }
+        updateCartBadge();
+        closeModal();
+        toggleCart(); 
+    }
+
+    function updateCartBadge() {
+        const count = cart.reduce((total, item) => total + item.qty, 0);
+        const badge = document.getElementById('cartCount');
+        badge.innerText = count;
+        
+        if (count > 0) {
+            badge.style.display = 'block';
+            badge.classList.add('pop');
+            setTimeout(() => badge.classList.remove('pop'), 200);
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function toggleCart() {
+        const cartModal = document.getElementById('cartModal');
+        if (cartModal.style.display === 'flex') {
+            cartModal.style.display = 'none';
+        } else {
+            renderCartItems();
+            cartModal.style.display = 'flex';
+        }
+    }
+
+    function renderCartItems() {
+        const container = document.getElementById('cartItemsContainer');
+        container.innerHTML = '';
+        if (cart.length === 0) {
+            container.innerHTML = '<p style="text-align:center; margin-top:20px; font-size:14px;">Your bag is empty.</p>';
+            return;
+        }
+        cart.forEach((item, index) => {
+            const formattedPrice = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(item.price);
+            container.innerHTML += `
+                <div class="cart-item">
+                    <img src="${item.images[0]}">
+                    <div class="cart-item-info">
+                        <h4>${item.name}</h4>
+                        <p>Qty: ${item.qty}</p>
+                        <p style="font-weight:bold; color:#000; margin-top:5px;">${formattedPrice}</p>
+                    </div>
+                    <button class="remove-item" onclick="removeFromCart(${index})">Remove</button>
+                </div>
+            `;
+        });
+    }
+
+    function removeFromCart(index) {
+        cart.splice(index, 1);
+        updateCartBadge();
+        renderCartItems();
+    }
+
+    function checkoutCart() {
+        if (cart.length === 0) return alert("Your bag is empty!");
+        const phone = "2349034034444";
+        let message = `Hello King's Luxury! 🛍️\n\nI would like to place an order for:\n\n`;
+        let total = 0;
+        
+        cart.forEach((item, index) => {
+            const formattedPrice = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(item.price);
+            message += `${index + 1}. *${item.name}*\n   Qty: ${item.qty}\n   Price: ${formattedPrice}\n   Color: Which color is available\n\n`;
+            total += item.price * item.qty;
+        });
+
+        const formattedTotal = new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(total);
+        message += `💰 *Total: ${formattedTotal}*\n\nPlease let me know if these are available and how I can proceed with payment and delivery.`;
+        
+        window.location.href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    }
+
+    // SIGNUP & DASHBOARD
+    function checkUserStatus() {
+        const savedUser = localStorage.getItem('kingsUser');
+        if (savedUser) {
+            showDashboard(JSON.parse(savedUser).name);
+        } else {
+            showSignup();
+        }
+    }
+
+    function showSignup() {
+        document.getElementById('mainStoreView').style.display = 'none';
+        document.getElementById('dashboardView').style.display = 'none';
+        document.getElementById('signupView').style.display = 'block';
+        window.scrollTo(0,0);
+    }
+
+    function showDashboard(name) {
+        document.getElementById('mainStoreView').style.display = 'none';
+        document.getElementById('signupView').style.display = 'none';
+        document.getElementById('dashboardView').style.display = 'block';
+        document.getElementById('dashName').innerText = name;
+        window.scrollTo(0,0);
+    }
+
+    function showMainStore() {
+        document.getElementById('dashboardView').style.display = 'none';
+        document.getElementById('signupView').style.display = 'none';
+        document.getElementById('mainStoreView').style.display = 'block';
+        toggleMenu();
+        window.scrollTo(0,0);
+    }
+
+    function processSignup() {
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const phone = document.getElementById('signupPhone').value.trim();
+        
+        if (name === '' || email === '' || phone === '') {
+            return alert("Please fill in your Name, Email, and WhatsApp Number.");
+        }
+
+        localStorage.setItem('kingsUser', JSON.stringify({ name: name, email: email, phone: phone }));
+
+        const myPhone = "2349034034444";
+        const text = `🚨 *NEW CUSTOMER SIGNUP* 🚨\n\n👤 *Name:* ${name}\n📧 *Email:* ${email}\n📱 *WhatsApp:* ${phone}\n\nThey just created an account on King's Luxury!`;
+        
+        window.open(`https://wa.me/${myPhone}?text=${encodeURIComponent(text)}`, '_blank');
+
+        showDashboard(name);
+    }
+
+    function logoutUser() {
+        localStorage.removeItem('kingsUser');
+        showMainStore();
+    }
+
+    // SEARCH, MENU, CHATBOT
+    function toggleSearch() { document.getElementById('searchOverlay').classList.toggle('open'); }
+    function searchProducts() {
+        const query = document.getElementById('searchInput').value.toLowerCase();
+        const resultsContainer = document.getElementById('searchResults');
+        resultsContainer.innerHTML = '';
+        if (query.length === 0) return;
+        const filtered = products.filter(p => p.name.toLowerCase().includes(query));
+        if (filtered.length === 0) {
+            resultsContainer.innerHTML = '<p style="padding:15px;">No watches found.</p>';
+        } else {
+            filtered.forEach(p => {
+                resultsContainer.innerHTML += `<div style="padding:15px; border-bottom:1px solid #eee; cursor:pointer;" onclick="closeSearchAndOpenModal(${p.id})"><h3>${p.name}</h3><p style="font-size:12px; color:#666;">₦${p.price.toLocaleString()}</p></div>`;
+            });
+        }
+    }
+    function closeSearchAndOpenModal(id) { 
+        document.getElementById('searchInput').value = ''; 
+        document.getElementById('searchResults').innerHTML = ''; 
+        toggleSearch(); 
+        openModal(id); 
+    }
+
+    function toggleSort() { 
+        const menu = document.getElementById('sortMenu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block'; 
+    }
+    
+    function sortProducts(type) {
+        let sorted = [...products];
+        if (type === 'low') sorted.sort((a, b) => a.price - b.price);
+        if (type === 'high') sorted.sort((a, b) => b.price - a.price);
+        if (type === 'name') sorted.sort((a, b) => a.name.localeCompare(b.name));
+        renderProducts(sorted);
+        toggleSort();
+    }
+
+    function toggleMenu() { document.getElementById('sideMenu').classList.toggle('open'); }
+
+    function toggleChat() { document.getElementById('chatBox').classList.toggle('open'); }
+    function botReply(userText) {
+        const chatBody = document.getElementById('chatBody');
+        chatBody.innerHTML += `<div class="message user">${userText}</div>`;
+        setTimeout(() => {
+            let botText = "";
+            if (userText === 'How much is delivery within Jalingo??') botText = "Delivery within Jalingo is completely FREE.";
+            else if (userText === 'How much is shipping?') botText = "Shipping within JALINGO is ₦18,000. Nationwide delivery is calculated based on your location.";
+            else if (userText === 'I want to talk to a human') botText = "No problem! Please click the link below to chat with our manager.";
+            
+            chatBody.innerHTML += `<div class="message bot">${botText}</div>`;
+            if (userText === 'I want to talk to a human') {
+                chatBody.innerHTML += `<a href="https://wa.me/2349034034444" target="_blank" style="display:block; text-align:center; background:#25D366; color:white; padding:10px; text-decoration:none; margin-top:10px; font-weight:bold;">Open WhatsApp</a>`;
+            }
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }, 1000);
+    }
+
+    function toggleFooterMenu() {
+        const links = document.getElementById('footerLinks');
+        const arrow = document.getElementById('footerArrow');
+        links.classList.toggle('hidden');
+        arrow.style.transform = links.classList.contains('hidden') ? "rotate(180deg)" : "rotate(0deg)";
+    }
+
+    // Initialize
+    renderProducts(products); 
+    </script>
+
+</body>
+</html>
